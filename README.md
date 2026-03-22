@@ -31,7 +31,7 @@ Pick the **printer model** (fallback if auto-detection fails) and set **label le
 
 **Remembered settings:** `localStorage` keys `tinyqr.printerModel` and `tinyqr.labelMm` store the model dropdown and label length between visits. Bluetooth auto-detect updates the model and saves it when it matches a known option.
 
-**Printed label:** Below the QR, the sticker includes the URL in small monospace text, truncated to 25 characters with an ellipsis when longer.
+**Printed label:** Below the QR, the sticker shows the URL in small monospace text without the `http://` or `https://` prefix, truncated to 25 characters with an ellipsis when longer. The QR still encodes the full normalized URL.
 
 ## Disclaimer
 

@@ -80,11 +80,16 @@
     }
   }
 
+  function stickerUrlWithoutScheme(href) {
+    return href.replace(/^https?:\/\//i, "");
+  }
+
   function stickerUrlCaption(href) {
-    if (href.length > URL_CAPTION_MAX) {
-      return href.slice(0, URL_CAPTION_MAX) + "\u2026";
+    const display = stickerUrlWithoutScheme(href);
+    if (display.length > URL_CAPTION_MAX) {
+      return display.slice(0, URL_CAPTION_MAX) + "\u2026";
     }
-    return href;
+    return display;
   }
 
   function captionFontPx(ctx, pw, ph, text) {
