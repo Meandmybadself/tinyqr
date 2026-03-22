@@ -40,6 +40,13 @@
   const LS_MODEL = "tinyqr.printerModel";
   const LS_LABEL_MM = "tinyqr.labelMm";
   const URL_CAPTION_MAX = 25;
+  /** Wide labels (e.g. B1): QR left, URL beside it for a larger code. */
+  const STICKER_SIDE_MIN_WIDTH = 140;
+  const STICKER_SIDE_MIN_WIDTH_RATIO = 1.12;
+  /** Min horizontal space reserved beside the QR for the URL column. */
+  const STICKER_SIDE_TEXT_RESERVE = 40;
+  /** Horizontal space between QR and URL in side-by-side layout. */
+  const STICKER_QR_TEXT_GAP = 40;
 
   function persistModel() {
     try {
@@ -120,6 +127,61 @@
     ctx.textBaseline = "bottom";
     ctx.font = `${fontPx}px ui-monospace, monospace, sans-serif`;
     ctx.fillText(text, pw / 2, ph - 1);
+  }
+
+  function shouldUseStickerSideLayout(pw, ph) {
+    return (
+      pw >= STICKER_SIDE_MIN_WIDTH &&
+      pw >= ph * STICKER_SIDE_MIN_WIDTH_RATIO
+    );
+  }
+
+  function wrapStickerCaption(text, charsPerLine) {
+    const n = Math.max(1, charsPerLine);
+    const lines = [];
+    for (let i = 0; i < text.length; i += n) {
+      lines.push(text.slice(i, i + n));
+    }
+    return lines.length ? lines : [""];
+  }
+
+  function fitStickerCaptionInRect(ctx, text, w, h) {
+    let fontPx = Math.max(
+      5,
+      Math.min(16, Math.floor(Math.min(w, h) * 0.18))
+    );
+    let lines;
+    let lineHeight;
+    for (;;) {
+      ctx.font = `${fontPx}px ui-monospace, monospace, sans-serif`;
+      const cpl = Math.max(3, Math.floor(w / (fontPx * 0.55)));
+      lines = wrapStickerCaption(text, cpl);
+      lineHeight = fontPx + 1;
+      if (lines.length * lineHeight <= h || fontPx <= 5) break;
+      fontPx -= 1;
+    }
+    return { fontPx, lines, lineHeight };
+  }
+
+  function drawUrlCaptionInRect(ctx, x, y, w, h, text) {
+    const { fontPx, lines, lineHeight } = fitStickerCaptionInRect(
+      ctx,
+      text,
+      w,
+      h
+    );
+    ctx.save();
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.font = `${fontPx}px ui-monospace, monospace, sans-serif`;
+    const blockH = lines.length * lineHeight;
+    let y0 = y + Math.max(0, (h - blockH) / 2);
+    for (const line of lines) {
+      ctx.fillText(line, x, y0);
+      y0 += lineHeight;
+    }
+    ctx.restore();
   }
 
   function log(msg) {
@@ -271,12 +333,34 @@
     const pw = printCanvas.width;
     const ph = printCanvas.height;
     const captionText = stickerUrlCaption(href);
-    const capH = captionBandHeight(ctx, pw, ph, captionText);
-    const avail = Math.min(pw, ph - capH);
-    const side = Math.floor(avail * 0.92);
-    if (side < 28 || avail < 32) {
-      showUrlError("Canvas too small for a QR code and caption.");
-      return;
+    const pad = 3;
+    let side;
+    let useSide = false;
+
+    if (shouldUseStickerSideLayout(pw, ph)) {
+      const maxByHeight = ph - 2 * pad;
+      const maxByWidth =
+        pw -
+        2 * pad -
+        STICKER_QR_TEXT_GAP -
+        STICKER_SIDE_TEXT_RESERVE;
+      const tentative = Math.floor(
+        Math.min(maxByHeight, maxByWidth) * 0.97
+      );
+      if (tentative >= 28) {
+        useSide = true;
+        side = tentative;
+      }
+    }
+
+    if (!useSide) {
+      const capH = captionBandHeight(ctx, pw, ph, captionText);
+      const avail = Math.min(pw, ph - capH);
+      side = Math.floor(avail * 0.92);
+      if (side < 28 || avail < 32) {
+        showUrlError("Canvas too small for a QR code and caption.");
+        return;
+      }
     }
 
     qrScratch.width = side;
@@ -295,11 +379,23 @@
       return;
     }
 
-    const x = Math.floor((pw - side) / 2);
-    const bandTop = ph - capH;
-    const y = Math.max(1, Math.floor((bandTop - side) / 2));
-    ctx.drawImage(qrScratch, x, y);
-    drawUrlCaption(ctx, pw, ph, captionText);
+    if (useSide) {
+      const qx = pad;
+      const qy = Math.max(pad, Math.floor((ph - side) / 2));
+      ctx.drawImage(qrScratch, qx, qy);
+      const textX = qx + side + STICKER_QR_TEXT_GAP;
+      const textY = pad;
+      const textW = pw - textX - pad;
+      const textH = ph - 2 * pad;
+      drawUrlCaptionInRect(ctx, textX, textY, textW, textH, captionText);
+    } else {
+      const capH = captionBandHeight(ctx, pw, ph, captionText);
+      const bandTop = ph - capH;
+      const x = Math.floor((pw - side) / 2);
+      const y = Math.max(1, Math.floor((bandTop - side) / 2));
+      ctx.drawImage(qrScratch, x, y);
+      drawUrlCaption(ctx, pw, ph, captionText);
+    }
     showUrlError("");
   }
 
