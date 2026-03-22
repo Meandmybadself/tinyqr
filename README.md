@@ -1,5 +1,7 @@
 # TinyQR
 
+**Repository:** [github.com/Meandmybadself/tinyqr](https://github.com/Meandmybadself/tinyqr)
+
 Static client-only page: enter a URL, render a small QR code on a canvas sized for your Niimbot label, then print over **Web Bluetooth** using [@mmote/niimbluelib](https://www.npmjs.com/package/@mmote/niimbluelib) (pinned in `index.html`).
 
 ## Requirements

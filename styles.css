@@ -226,6 +226,25 @@ button:disabled {
   word-break: break-all;
 }
 
+.site-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.site-footer a {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.site-footer a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
