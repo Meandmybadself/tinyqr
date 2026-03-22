@@ -14,6 +14,8 @@ Static client-only page: enter a URL, render a small QR code on a canvas sized f
 - `?url=` or `?u=` — prefill the URL field and generate the QR. Encode the value, e.g.  
   `?url=${encodeURIComponent('https://example.com/path')}`
 
+**YouTube:** Watch, Shorts, embed, `music.youtube.com`, and `youtube-nocookie.com` single-video URLs are rewritten to **`https://youtu.be/VIDEO_ID`**. Timestamp `t` / `start` is kept when present; other query params are dropped.
+
 ## GitHub Pages and custom domain
 
 1. Push this repo and enable **Settings → Pages** (source: branch or `/docs` as you prefer).

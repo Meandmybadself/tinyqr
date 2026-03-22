@@ -138,22 +138,82 @@
     }
   }
 
+  function isYouTubeVideoId(id) {
+    return typeof id === "string" && /^[\w-]{11}$/.test(id);
+  }
+
+  /** Single-video YouTube links → https://youtu.be/VIDEO_ID (optional ?t= / ?start=). */
+  function shortenYouTubeUrl(href) {
+    let url;
+    try {
+      url = new URL(href);
+    } catch {
+      return null;
+    }
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    let id = null;
+
+    if (host === "youtu.be") {
+      id =
+        url.pathname.split("/").filter(Boolean)[0]?.split("?")[0] ?? null;
+      if (!isYouTubeVideoId(id)) return null;
+      const out = new URL(`https://youtu.be/${id}`);
+      const t = url.searchParams.get("t") ?? url.searchParams.get("start");
+      if (t) out.searchParams.set("t", t);
+      return out.href;
+    }
+
+    const ytLong =
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "music.youtube.com" ||
+      host === "youtube-nocookie.com";
+
+    if (!ytLong) return null;
+
+    const path = url.pathname;
+    if (path === "/watch" || path === "/watch/") {
+      id = url.searchParams.get("v");
+    } else if (path.startsWith("/embed/")) {
+      id = path.split("/")[2] ?? null;
+    } else if (path.startsWith("/v/")) {
+      id = path.split("/")[2] ?? null;
+    } else if (path.startsWith("/shorts/")) {
+      id = path.split("/")[2] ?? null;
+    } else if (path.startsWith("/live/")) {
+      id = path.split("/")[2] ?? null;
+    }
+
+    if (!id || !isYouTubeVideoId(id)) return null;
+
+    const out = new URL(`https://youtu.be/${id}`);
+    const t = url.searchParams.get("t") ?? url.searchParams.get("start");
+    if (t) out.searchParams.set("t", t);
+    return out.href;
+  }
+
   function normalizeUrl(raw) {
     const t = raw.trim();
     if (!t) return null;
+    let href = null;
     try {
       const u = new URL(t);
-      if (u.protocol === "http:" || u.protocol === "https:") return u.href;
+      if (u.protocol === "http:" || u.protocol === "https:") href = u.href;
     } catch {
       /* try with https */
     }
-    try {
-      const u = new URL("https://" + t);
-      if (u.hostname) return u.href;
-    } catch {
-      /* ignore */
+    if (href == null) {
+      try {
+        const u = new URL("https://" + t);
+        if (u.hostname) href = u.href;
+      } catch {
+        return null;
+      }
     }
-    return null;
+    const shortYt = shortenYouTubeUrl(href);
+    return shortYt ?? href;
   }
 
   function feedPixels(meta, mm) {
