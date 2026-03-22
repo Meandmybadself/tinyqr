@@ -31,7 +31,7 @@ Pick the **printer model** (fallback if auto-detection fails) and set **label le
 
 **Remembered settings:** `localStorage` keys `tinyqr.printerModel` and `tinyqr.labelMm` store the model dropdown and label length between visits. Bluetooth auto-detect updates the model and saves it when it matches a known option.
 
-**Printed label:** The URL is shown in small monospace text without the `http://` or `https://` prefix, truncated to 25 characters with an ellipsis when longer. The QR still encodes the full normalized URL. On **wide** canvases (width ≥ 140px and width ≥ 1.12× height, e.g. B1-style labels), the QR is **left** and the URL is drawn in the strip **immediately to its right** (not flush to the far edge) so the QR can grow with label height; narrower labels keep the URL in a **band below** the QR.
+**Printed label:** The URL is shown in small monospace text without the `http://` or `https://` prefix, with a **line break after the hostname** (path/query/hash on the next line). It is truncated to 25 characters total with an ellipsis when longer. The QR still encodes the full normalized URL. On **wide** canvases (width ≥ 140px and width ≥ 1.12× height, e.g. B1-style labels), the QR is **left** and the URL is drawn in the strip **immediately to its right** (not flush to the far edge) so the QR can grow with label height; narrower labels keep the URL in a **band below** the QR.
 
 ## Disclaimer
 

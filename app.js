@@ -92,42 +92,79 @@
     return href.replace(/^https?:\/\//i, "");
   }
 
+  /** Hostname on first line, path/query/hash on the next; scheme stripped; length capped. */
   function stickerUrlCaption(href) {
-    const display = stickerUrlWithoutScheme(href);
-    if (display.length > URL_CAPTION_MAX) {
-      return display.slice(0, URL_CAPTION_MAX) + "\u2026";
+    let line1;
+    let line2 = "";
+    try {
+      const u = new URL(href);
+      line1 = u.hostname;
+      line2 = (u.pathname + u.search + u.hash).replace(/^\/$/, "");
+    } catch {
+      line1 = stickerUrlWithoutScheme(href);
     }
-    return display;
+    const twoLine = line2 ? `${line1}\n${line2}` : line1;
+    if (twoLine.length <= URL_CAPTION_MAX) {
+      return twoLine;
+    }
+    if (line2) {
+      const budget = URL_CAPTION_MAX - line1.length - 1 - 1;
+      if (budget >= 1) {
+        return `${line1}\n${line2.slice(0, budget)}\u2026`;
+      }
+    }
+    return twoLine.slice(0, URL_CAPTION_MAX) + "\u2026";
+  }
+
+  function captionLogicalLines(text) {
+    return text.split("\n");
   }
 
   function captionFontPx(ctx, pw, ph, text) {
+    const segments = captionLogicalLines(text);
     let fontPx = Math.max(
       5,
-      Math.min(12, Math.floor(Math.min(pw, ph) * 0.1))
+      Math.min(13, Math.floor(Math.min(pw, ph) * 0.11))
     );
     ctx.save();
     ctx.textAlign = "center";
     for (;;) {
       ctx.font = `${fontPx}px ui-monospace, monospace, sans-serif`;
-      if (ctx.measureText(text).width <= pw - 4 || fontPx <= 5) break;
+      let fits = true;
+      for (const seg of segments) {
+        if (ctx.measureText(seg).width > pw - 4) {
+          fits = false;
+          break;
+        }
+      }
+      if (fits || fontPx <= 5) break;
       fontPx -= 1;
     }
     ctx.restore();
     return fontPx;
   }
 
-  /** Vertical space reserved under the QR for the caption line. */
+  /** Vertical space reserved under the QR for the caption block. */
   function captionBandHeight(ctx, pw, ph, text) {
-    return captionFontPx(ctx, pw, ph, text) + 3;
+    const fontPx = captionFontPx(ctx, pw, ph, text);
+    const n = captionLogicalLines(text).length;
+    const lineGap = 1;
+    return n * (fontPx + lineGap) + 2;
   }
 
   function drawUrlCaption(ctx, pw, ph, text) {
     const fontPx = captionFontPx(ctx, pw, ph, text);
+    const lineParts = captionLogicalLines(text);
     ctx.fillStyle = "#000000";
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     ctx.font = `${fontPx}px ui-monospace, monospace, sans-serif`;
-    ctx.fillText(text, pw / 2, ph - 1);
+    const lh = fontPx + 1;
+    let baselineY = ph - 1;
+    for (let i = lineParts.length - 1; i >= 0; i--) {
+      ctx.fillText(lineParts[i], pw / 2, baselineY);
+      baselineY -= lh;
+    }
   }
 
   function shouldUseStickerSideLayout(pw, ph) {
@@ -140,8 +177,11 @@
   function wrapStickerCaption(text, charsPerLine) {
     const n = Math.max(1, charsPerLine);
     const lines = [];
-    for (let i = 0; i < text.length; i += n) {
-      lines.push(text.slice(i, i + n));
+    for (const segment of text.split("\n")) {
+      if (segment.length === 0) continue;
+      for (let i = 0; i < segment.length; i += n) {
+        lines.push(segment.slice(i, i + n));
+      }
     }
     return lines.length ? lines : [""];
   }
@@ -149,7 +189,7 @@
   function fitStickerCaptionInRect(ctx, text, w, h) {
     let fontPx = Math.max(
       5,
-      Math.min(13, Math.floor(Math.min(w, h) * 0.15))
+      Math.min(14, Math.floor(Math.min(w, h) * 0.165))
     );
     let lines;
     let lineHeight;
