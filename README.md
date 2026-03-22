@@ -1,0 +1,30 @@
+# TinyQR
+
+Static client-only page: enter a URL, render a small QR code on a canvas sized for your Niimbot label, then print over **Web Bluetooth** using [@mmote/niimbluelib](https://www.npmjs.com/package/@mmote/niimbluelib) (pinned in `index.html`).
+
+## Requirements
+
+- **HTTPS** (e.g. GitHub Pages with “Enforce HTTPS”). Web Bluetooth is only available in a [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
+- A **Chromium-based** browser with Web Bluetooth (Chrome, Edge, etc.). Safari does not support Web Bluetooth for this use case.
+
+## URL query parameters
+
+- `?url=` or `?u=` — prefill the URL field and generate the QR. Encode the value, e.g.  
+  `?url=${encodeURIComponent('https://example.com/path')}`
+
+## GitHub Pages and custom domain
+
+1. Push this repo and enable **Settings → Pages** (source: branch or `/docs` as you prefer).
+2. Add a `CNAME` file (already present) with your hostname: `tinyqr.meandmybadself.com`.
+3. In your DNS provider, create a **CNAME** from `tinyqr.meandmybadself.com` to `<your-user>.github.io`.
+4. After DNS propagates, enable **Enforce HTTPS** in the Pages settings.
+
+See [GitHub: custom domains for Pages](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site).
+
+## Niimbot / label sizing
+
+Pick the **printer model** (fallback if auto-detection fails) and set **label length (mm)** along the feed axis to match your roll. The canvas uses the library’s `printheadPixels` and `printDirection` for the other axis. Wrong dimensions will stretch or clip on the physical label.
+
+## Disclaimer
+
+NiimBlueLib is third-party, alpha, and not affiliated with Niimbot. Use at your own risk.

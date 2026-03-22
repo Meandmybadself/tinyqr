@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TinyQR</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://unpkg.com/@mmote/niimbluelib@0.0.1-alpha.38/dist/umd/niimbluelib.min.js"></script>
+    <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <h1>TinyQR</h1>
+        <p class="lede">
+          Turn a URL into a small QR code and print it on a Niimbot label over
+          <strong>Bluetooth</strong> (Chrome / Edge, HTTPS).
+        </p>
+        <p class="note" id="bluetoothNote" hidden>
+          Web Bluetooth needs a secure page and a Chromium-based browser. Safari
+          is not supported.
+        </p>
+      </header>
+
+      <section class="panel">
+        <h2>URL</h2>
+        <div class="row">
+          <label class="sr-only" for="urlInput">URL</label>
+          <input
+            id="urlInput"
+            type="text"
+            inputmode="url"
+            autocomplete="url"
+            placeholder="https://example.com"
+            spellcheck="false"
+          />
+          <button type="button" id="generateBtn">Generate</button>
+        </div>
+        <p class="hint">
+          Prefill with
+          <code>?url=</code> or <code>?u=</code> (use
+          <code>encodeURIComponent</code> for the value).
+        </p>
+        <p class="error" id="urlError" hidden></p>
+      </section>
+
+      <section class="panel">
+        <h2>Label &amp; preview</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="modelSelect">Printer model (fallback)</label>
+            <select id="modelSelect"></select>
+            <p class="hint small">
+              Used if the printer is not auto-detected after connecting.
+            </p>
+          </div>
+          <div class="field">
+            <label for="labelMm">Label length (feed axis, mm)</label>
+            <input id="labelMm" type="number" min="6" max="200" step="0.1" value="12" />
+            <p class="hint small">
+              Match your roll; canvas uses head width from the model and this
+              length along the feed. Width/height must align with
+              <code>printDirection</code> (handled automatically).
+            </p>
+          </div>
+        </div>
+        <div class="preview-wrap">
+          <canvas id="printCanvas" width="96" height="96"></canvas>
+        </div>
+        <p class="meta" id="canvasMeta"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Printer</h2>
+        <div class="btn-row">
+          <button type="button" id="connectBtn">Connect Bluetooth</button>
+          <button type="button" id="disconnectBtn" disabled>Disconnect</button>
+          <button type="button" id="printBtn" disabled>Print</button>
+        </div>
+        <p class="status" id="statusLine">Disconnected.</p>
+        <pre class="log" id="logPane" aria-live="polite"></pre>
+      </section>
+    </main>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
