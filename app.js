@@ -46,7 +46,8 @@
   /** Min horizontal space reserved beside the QR for the URL column. */
   const STICKER_SIDE_TEXT_RESERVE = 40;
   /** Horizontal space between QR and URL in side-by-side layout. */
-  const STICKER_QR_TEXT_GAP = 40;
+  const STICKER_QR_TEXT_GAP = 20
+  ;
 
   function persistModel() {
     try {
@@ -102,7 +103,7 @@
   function captionFontPx(ctx, pw, ph, text) {
     let fontPx = Math.max(
       5,
-      Math.min(14, Math.floor(Math.min(pw, ph) * 0.12))
+      Math.min(12, Math.floor(Math.min(pw, ph) * 0.1))
     );
     ctx.save();
     ctx.textAlign = "center";
@@ -148,7 +149,7 @@
   function fitStickerCaptionInRect(ctx, text, w, h) {
     let fontPx = Math.max(
       5,
-      Math.min(16, Math.floor(Math.min(w, h) * 0.18))
+      Math.min(13, Math.floor(Math.min(w, h) * 0.15))
     );
     let lines;
     let lineHeight;
