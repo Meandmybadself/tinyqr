@@ -25,6 +25,10 @@ See [GitHub: custom domains for Pages](https://docs.github.com/en/pages/configur
 
 Pick the **printer model** (fallback if auto-detection fails) and set **label length (mm)** along the feed axis to match your roll. The canvas uses the library’s `printheadPixels` and `printDirection` for the other axis. Wrong dimensions will stretch or clip on the physical label.
 
+**Remembered settings:** `localStorage` keys `tinyqr.printerModel` and `tinyqr.labelMm` store the model dropdown and label length between visits. Bluetooth auto-detect updates the model and saves it when it matches a known option.
+
+**Printed label:** Below the QR, the sticker includes the URL in small monospace text, truncated to 25 characters with an ellipsis when longer.
+
 ## Disclaimer
 
 NiimBlueLib is third-party, alpha, and not affiliated with Niimbot. Use at your own risk.

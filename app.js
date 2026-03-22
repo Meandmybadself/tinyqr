@@ -37,6 +37,86 @@
   let client = null;
   const qrScratch = document.createElement("canvas");
 
+  const LS_MODEL = "tinyqr.printerModel";
+  const LS_LABEL_MM = "tinyqr.labelMm";
+  const URL_CAPTION_MAX = 25;
+
+  function persistModel() {
+    try {
+      localStorage.setItem(LS_MODEL, modelSelect.value);
+    } catch {
+      /* private mode / quota */
+    }
+  }
+
+  function persistLabelMm() {
+    const n = parseFloat(labelMmInput.value, 10);
+    if (!Number.isFinite(n)) return;
+    try {
+      localStorage.setItem(LS_LABEL_MM, String(n));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function loadPreferences() {
+    try {
+      const savedModel = localStorage.getItem(LS_MODEL);
+      if (
+        savedModel &&
+        Array.from(modelSelect.options).some((o) => o.value === savedModel)
+      ) {
+        modelSelect.value = savedModel;
+      }
+      const savedMm = localStorage.getItem(LS_LABEL_MM);
+      if (savedMm != null) {
+        const n = parseFloat(savedMm, 10);
+        if (Number.isFinite(n) && n >= 6 && n <= 200) {
+          labelMmInput.value = String(n);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function stickerUrlCaption(href) {
+    if (href.length > URL_CAPTION_MAX) {
+      return href.slice(0, URL_CAPTION_MAX) + "\u2026";
+    }
+    return href;
+  }
+
+  function captionFontPx(ctx, pw, ph, text) {
+    let fontPx = Math.max(
+      5,
+      Math.min(14, Math.floor(Math.min(pw, ph) * 0.12))
+    );
+    ctx.save();
+    ctx.textAlign = "center";
+    for (;;) {
+      ctx.font = `${fontPx}px ui-monospace, monospace, sans-serif`;
+      if (ctx.measureText(text).width <= pw - 4 || fontPx <= 5) break;
+      fontPx -= 1;
+    }
+    ctx.restore();
+    return fontPx;
+  }
+
+  /** Vertical space reserved under the QR for the caption line. */
+  function captionBandHeight(ctx, pw, ph, text) {
+    return captionFontPx(ctx, pw, ph, text) + 3;
+  }
+
+  function drawUrlCaption(ctx, pw, ph, text) {
+    const fontPx = captionFontPx(ctx, pw, ph, text);
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.font = `${fontPx}px ui-monospace, monospace, sans-serif`;
+    ctx.fillText(text, pw / 2, ph - 1);
+  }
+
   function log(msg) {
     const line = typeof msg === "string" ? msg : String(msg);
     console.log(line);
@@ -125,9 +205,12 @@
     const ctx = printCanvas.getContext("2d");
     const pw = printCanvas.width;
     const ph = printCanvas.height;
-    const side = Math.max(32, Math.floor(Math.min(pw, ph) * 0.9));
-    if (side < 8) {
-      showUrlError("Canvas too small for a QR code.");
+    const captionText = stickerUrlCaption(href);
+    const capH = captionBandHeight(ctx, pw, ph, captionText);
+    const avail = Math.min(pw, ph - capH);
+    const side = Math.floor(avail * 0.92);
+    if (side < 28 || avail < 32) {
+      showUrlError("Canvas too small for a QR code and caption.");
       return;
     }
 
@@ -148,8 +231,10 @@
     }
 
     const x = Math.floor((pw - side) / 2);
-    const y = Math.floor((ph - side) / 2);
+    const bandTop = ph - capH;
+    const y = Math.max(1, Math.floor((bandTop - side) / 2));
     ctx.drawImage(qrScratch, x, y);
+    drawUrlCaption(ctx, pw, ph, captionText);
     showUrlError("");
   }
 
@@ -201,7 +286,10 @@
       if (detected) {
         log(`Detected print task type: ${detected}`);
         const opt = Array.from(modelSelect.options).find((o) => o.value === detected);
-        if (opt) modelSelect.value = detected;
+        if (opt) {
+          modelSelect.value = detected;
+          persistModel();
+        }
       }
     });
     c.on("disconnect", () => {
@@ -313,9 +401,18 @@
     else fillWhite();
   }
 
-  modelSelect.addEventListener("change", onLayoutChange);
-  labelMmInput.addEventListener("change", onLayoutChange);
-  labelMmInput.addEventListener("input", onLayoutChange);
+  modelSelect.addEventListener("change", () => {
+    persistModel();
+    onLayoutChange();
+  });
+  labelMmInput.addEventListener("change", () => {
+    persistLabelMm();
+    onLayoutChange();
+  });
+  labelMmInput.addEventListener("input", () => {
+    persistLabelMm();
+    onLayoutChange();
+  });
 
   function initFromQuery() {
     const params = new URLSearchParams(window.location.search);
@@ -334,6 +431,7 @@
   }
 
   populateModels();
+  loadPreferences();
   applyCanvasDimensions();
   fillWhite();
   initFromQuery();
